@@ -1,0 +1,19 @@
+# Visual Studio / C++ build artifacts
+.vs/
+x64/
+x86/
+Debug/
+Release/
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.exe.recipe
+*.exe.metagen
+*.log
+*.tlog/
+*.vcxproj.user
+*.vcxproj.filters
+*.suo
+*.sdf
+*.opensdf
