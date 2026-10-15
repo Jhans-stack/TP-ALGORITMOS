@@ -134,7 +134,15 @@ repartiendolas en las primeras posiciones y el resto al azar, tal como
 ## Estructuras de datos disponibles
 
 Cada una vive en su propio header, con su propio tipo de nodo (no se
-reutiliza `Nodo<T>` entre estructuras distintas):
+reutiliza `Nodo<T>` entre estructuras distintas). El `Nodo<T>` (o
+`NodoCola<T>`, `NodoPila<T>`, `NodoCircular<T>`) va **en el mismo archivo**
+que su clase contenedora, no en un header aparte — asi lo hacen los 5
+headers de estructura que trae el curso (`Lista.h`, `Cola.h`, `Pila.h`,
+`ListaCircular.h`, `ListaDoble.h`: cada uno define primero el `Nodo`
+correspondiente y despues la clase que lo usa, en el mismo archivo). Esto
+es distinto de las clases de datos (`Alumno`, `Lector`, `Paciente`, etc.),
+que si van cada una en su propio `.h` porque son independientes de la
+estructura que las contiene.
 
 - `ListaEnlazada<T>` (`Nodo<T>`) — lista simple. Para recorridos e
   inserciones/eliminaciones generales.
