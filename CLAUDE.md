@@ -93,10 +93,18 @@ public:
 };
 ```
 
-Usar este estilo (atributos publicos) por defecto para clases de datos
-nuevas. El estilo anterior con `private` + getters (`Paciente.h`,
-`Dispositivo.h`) tambien es valido si el enunciado pide explicitamente
-encapsulamiento, pero ya no es la opcion por defecto.
+Usar este estilo (atributos publicos) por defecto para ejercicios sueltos
+de practica, donde no se evalua el encapsulamiento en si.
+
+Para examenes/parciales evaluados, el profesor SI valora el ambito
+(`private`/`public`) como criterio de nota: ahi usar `private` para los
+atributos y getters `public` para leerlos (estilo `Paciente.h`,
+`Dispositivo.h`, y el usado en el parcial — ver `Alumno`/`ExamenEscrito`/
+`Practica` del Sistema Academico). Dentro de la clase, los metodos pueden
+seguir usando los atributos directo (son miembros de la misma clase); el
+resto del programa (otras funciones, `main`) debe pasar siempre por los
+getters, nunca acceder al atributo directamente aunque el puntero lo
+permita en tiempo de compilacion por error de diseno.
 
 ## Generacion de datos (cuando el ejercicio no pide que el usuario los ingrese)
 
