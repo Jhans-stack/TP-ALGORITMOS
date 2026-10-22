@@ -60,9 +60,23 @@ examen.
 - Cada funcion resuelve una sola pregunta/opcion del menu. Nombres de
   funcion que digan claramente que hacen: `registrarX`, `calcularX`,
   `eliminarX`, `modificarX`, `mostrarX`, `generarX`.
-- Un comentario de una linea encima de cada funcion "de pregunta" o cuando
-  el nombre no basta para explicar que resuelve. No comentar lo obvio
-  dentro del cuerpo de la funcion.
+- Sin comentarios explicativos (nada de "esto hace X" encima de cada
+  funcion). Solo comentarios cortos tipo etiqueta para separar bloques o
+  algoritmos importantes dentro del archivo, como en
+  `Laboratorio01_MergeSortQuickSort/OrdenamientoSemana09.cpp`:
+
+  ```cpp
+  // MERGE SORT
+  void fusionar(...) { ... }
+  void ordenarPorMezcla(...) { ... }
+
+  // QUICKSORT
+  void intercambiar(...) { ... }
+  void particionar(...) { ... }
+
+  // MENU
+  int main() { ... }
+  ```
 - Programa dirigido por menu en `main()`: `do { ... } while (opcion != 0)`.
   Para el despacho de opciones, los ejercicios de examen usan una cadena de
   `if (opcion == 1) { ... } else if (opcion == 2) { ... }` en vez de
