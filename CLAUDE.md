@@ -12,6 +12,11 @@ con los ejemplos de clase mas simples (`EjercicioPedidos`,
 `EjercicioPacientes`, `RetoRecursividadYLambdas`), priorizar lo que hacen
 los ejercicios de examen.
 
+`Ejemplos/Laboratorio01_MergeSortQuickSort/` es material oficial del
+profesor (laboratorio de la Semana 09, con guia paso a paso de Visual
+Studio incluida), asi que para el tema de ordenamiento avanzado (Merge
+Sort / Quick Sort) tiene prioridad sobre cualquier otro ejemplo.
+
 ## Estructura del repo
 
 - `Ejemplos/Lista.h` — plantilla generica de lista enlazada simple
@@ -32,6 +37,9 @@ los ejercicios de examen.
 - `Ejemplos/Ejercicio04_ReproductorCanciones/` — `ListaDoble<T>` (con
   `anterior`/`siguiente`) + Fisher-Yates + Shell sort, todos con lambda
   como criterio.
+- `Ejemplos/Laboratorio01_MergeSortQuickSort/` — ordenar objetos
+  (`Paciente`) con Merge Sort y QuickSort sobre `vector<Paciente*>`,
+  validando el resultado con `estaOrdenado`.
 
 Cada ejercicio nuevo va en su propia carpeta dentro de `Ejemplos/` (o en la
 raiz si el profesor pide un solo archivo). Cada carpeta trae su propia
@@ -64,6 +72,19 @@ examen.
 - Validaciones con `if` simple (rango invalido, valor repetido, lista
   vacia) que imprime un mensaje y usa `continue`/`return` segun corresponda.
   No usar `try/catch` ni excepciones: no se ha visto en el curso.
+- Al leer la opcion del menu con `cin >> opcion`, recuperar el stream si
+  fallo (texto donde se esperaba un numero) en vez de dejar que el `cin`
+  quede trabado — confirmado como patron oficial en
+  `Laboratorio01_MergeSortQuickSort`:
+
+  ```cpp
+  cin >> opcion;
+  if (cin.fail()) {
+      cin.clear();
+      cin.ignore(1000, '\n');
+      opcion = -1;
+  }
+  ```
 
 ## Clases de datos (registros)
 
@@ -93,18 +114,19 @@ public:
 };
 ```
 
-Usar este estilo (atributos publicos) por defecto para ejercicios sueltos
-de practica, donde no se evalua el encapsulamiento en si.
-
-Para examenes/parciales evaluados, el profesor SI valora el ambito
-(`private`/`public`) como criterio de nota: ahi usar `private` para los
-atributos y getters `public` para leerlos (estilo `Paciente.h`,
-`Dispositivo.h`, y el usado en el parcial — ver `Alumno`/`ExamenEscrito`/
-`Practica` del Sistema Academico). Dentro de la clase, los metodos pueden
-seguir usando los atributos directo (son miembros de la misma clase); el
-resto del programa (otras funciones, `main`) debe pasar siempre por los
-getters, nunca acceder al atributo directamente aunque el puntero lo
-permita en tiempo de compilacion por error de diseno.
+Ese estilo (atributos publicos) aparecio en los ejercicios de examen
+02-04, pero tanto el material oficial del profesor
+(`Laboratorio01_MergeSortQuickSort/Paciente.h`) como el zip de clase
+original (`Ejercicio1_GestionPacientes`) y lo pedido en el parcial usan
+`private` + getters/setters `public`. Como el profesor SI valora el
+ambito (`private`/`public`) como criterio de nota, usar **`private` +
+getters por defecto** para clases de datos nuevas, y reservar los
+atributos publicos solo si el propio ejercicio los trae asi (por ejemplo,
+al reutilizar `Lector.h`/`Participante.h`/`Cancion.h` tal cual). Dentro de
+la clase, los metodos pueden seguir usando los atributos directo (son
+miembros de la misma clase); el resto del programa (otras funciones,
+`main`) debe pasar siempre por los getters, nunca acceder al atributo
+directamente.
 
 ## Generacion de datos (cuando el ejercicio no pide que el usuario los ingrese)
 
@@ -205,13 +227,42 @@ void seleccion(ListaEnlazada<T>& A, Criterio criterio) {
 
 ## Ordenamiento
 
-Los ejercicios de examen no usan `std::sort`: implementan el ordenamiento
-a mano sobre la propia estructura, intercambiando `->dato` entre nodos (sin
-tocar los punteros `siguiente`/`anterior`), parametrizado con una lambda
-criterio. Algoritmos ya usados: seleccion, insercion (sobre lista
-circular) y Shell sort (con una funcion auxiliar `nodoEn(lista, pos)` para
-acceder por posicion). Usar el mismo enfoque para ejercicios nuevos de
-ordenamiento en vez de copiar los datos a un arreglo aparte.
+Ningun ejercicio usa `std::sort`: siempre se implementa el algoritmo a
+mano. Sobre las estructuras propias (lista, lista circular, lista doble)
+se intercambia `->dato` entre nodos (sin tocar los punteros
+`siguiente`/`anterior`), parametrizado con una lambda criterio. Algoritmos
+ya usados asi: seleccion, insercion (sobre lista circular) y Shell sort
+(con una funcion auxiliar `nodoEn(lista, pos)` para acceder por posicion).
+Usar el mismo enfoque para ejercicios nuevos de ordenamiento simple en vez
+de copiar los datos a un arreglo aparte.
+
+### Merge Sort y Quick Sort
+
+Para estos dos (ver `Ejemplos/Laboratorio01_MergeSortQuickSort`), la
+estructura cambia porque ambos necesitan acceso por indice (`lista[i]`) y
+dividir el rango en mitades, algo que una lista enlazada simple no da de
+forma eficiente. Por eso aqui si se usa `vector<Paciente*>` en vez de
+`ListaEnlazada<Paciente*>` — es la unica excepcion reconocida a "no usar
+contenedores de la STL", y solo para este par de algoritmos.
+
+- **Merge Sort**: `ordenarPorMezcla(lista, izq, der)` — caso base
+  `izq >= der`, calcula `med`, ordena cada mitad por recursion y llama a
+  `fusionar`. `fusionar(lista, izq, med, der)` copia las dos mitades a
+  vectores auxiliares `izquierda`/`derecha` y las vuelve a escribir en
+  `lista` tomando siempre el menor de los dos primeros.
+- **Quick Sort**: `ordenarRapido(lista, inicio, fin)` — si
+  `inicio < fin`, llama a `particionar` y se repite a cada lado del
+  pivote. `particionar(lista, inicio, fin)` usa el **ultimo elemento**
+  como pivote, compara cada elemento solo contra el pivote, y mueve los
+  menores o iguales a la izquierda con `intercambiar` (swap manual con una
+  variable `temporal`); al final coloca el pivote en su posicion y la
+  devuelve.
+- **Validar el resultado**: una funcion `estaOrdenado(lista)` que recorre
+  comparando `lista[i-1]` con `lista[i]` y devuelve `false` en el primer
+  par fuera de orden — mostrar el resultado de la validacion despues de
+  ordenar, no asumir que salio bien.
+- Liberar memoria igual que siempre: un `liberarPacientes(lista)` que
+  recorre y hace `delete` a cada puntero antes de `lista.clear()`.
 
 ## Memoria dinamica
 
@@ -226,7 +277,10 @@ ordenamiento en vez de copiar los datos a un arreglo aparte.
 ## Lo que NO usar (a menos que el profesor lo pida)
 
 - Contenedores/algoritmos de la STL (`std::vector`, `std::sort`,
-  `std::for_each`, `std::list`, etc.) y `std::function`.
+  `std::for_each`, `std::list`, etc.) y `std::function`. La unica
+  excepcion es `std::vector<T*>` para Merge Sort / Quick Sort (ver
+  "Ordenamiento" mas arriba) — y aun ahi, `std::sort` sigue sin usarse:
+  el algoritmo se escribe a mano.
 - Punteros inteligentes (`unique_ptr`, `shared_ptr`), `try/catch`,
   `structured bindings`, u otro C++ moderno que no aparezca ya en los
   ejemplos. (Los templates propios con un parametro de tipo, incluyendo uno
