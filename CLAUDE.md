@@ -220,10 +220,11 @@ estructura que las contiene.
   recorrer con `do { ... } while (actual != cabeza)`. Para turnos/rondas.
 - `ListaDoble<T>` (`Nodo<T>` con `anterior` y `siguiente`) — para recorrer
   en ambos sentidos (por ejemplo, un reproductor con siguiente/anterior).
-- `Arbol` (`struct Nodo` con `izq`/`der`) — ver "Arbol binario (BST)" mas
-  abajo. A diferencia de las listas, el `Nodo` de arbol es un `struct`
-  (no `class`), no esta templado (`int valor`, no `T`) y no se recorre
-  con un `while` externo: toda la logica va en metodos recursivos.
+- `Arbol` (`struct Nodo` con `izq`/`der`) — ver "Arbol binario" mas abajo.
+  A diferencia de las listas, el `Nodo` de arbol es un `struct` (no
+  `class`) y no esta templado (`int valor`, no `T`). No es un arbol
+  binario de busqueda: `insertar` es iterativo (por niveles, con una
+  `Cola<T>`); los recorridos, contar y altura son recursivos.
 
 El `Lista.h` base que trae el curso usa los nombres `insertarIncial` y
 `mostar` (asi, tal cual, con esa ortografia) ademas de `insertarInicio` /
@@ -232,11 +233,15 @@ Si el ejercicio reutiliza ese `Lista.h` tal cual, respetar esos nombres
 aunque tengan typos; si se escribe una estructura nueva desde cero, usar
 los nombres bien escritos (`insertarInicio`, `mostrar`).
 
-## Arbol binario (BST)
+## Arbol binario
 
-Basado en `Ejemplos/Ejercicio02_ArbolMultiplos3`. El nodo es un `struct`
-simple con campos publicos (no una `class` con getters, como los `Nodo`
-de las listas):
+**No es un arbol binario de busqueda.** Por defecto, insertar NO compara
+valores para decidir izquierda/derecha — eso seria un BST. La regla del
+curso es la generica de "arbol binario": el nodo nuevo se coloca en el
+**primer lugar libre, de arriba hacia abajo y de izquierda a derecha**
+(recorriendo por niveles con una cola hasta encontrar el primer hijo
+vacio). El nodo es un `struct` simple con campos publicos (no una `class`
+con getters, como los `Nodo` de las listas):
 
 ```cpp
 struct Nodo {
@@ -247,23 +252,17 @@ struct Nodo {
 };
 ```
 
-La clase `Arbol` guarda solo `Nodo* raiz` como atributo `private`, y cada
-operacion tiene dos partes: un metodo **privado** recursivo que recibe un
-`Nodo*` como parametro (no usa `raiz` directamente) y hace el trabajo
-real, y un metodo **publico** sin parametros que llama al privado pasando
-`raiz`:
+La clase `Arbol` guarda `Nodo* raiz` como atributo `private`. Insertar es
+iterativo (recorrido por niveles, reutilizando la `Cola<T>` propia del
+curso — nunca `std::queue`); el resto de operaciones (recorridos, contar,
+altura, liberar) son recursivas: un metodo **privado** que recibe un
+`Nodo*` como parametro hace el trabajo real, y un metodo **publico** sin
+parametros llama al privado pasando `raiz`:
 
 ```cpp
 class Arbol {
 private:
     Nodo* raiz;
-
-    Nodo* insertarNodo(Nodo* nodo, int valor) {
-        if (nodo == nullptr) return new Nodo(valor);
-        if (valor < nodo->valor) nodo->izq = insertarNodo(nodo->izq, valor);
-        else                     nodo->der = insertarNodo(nodo->der, valor);
-        return nodo;
-    }
 
     void enOrdenNodo(Nodo* nodo) {
         if (nodo == nullptr) return;
@@ -295,25 +294,50 @@ public:
     Arbol() : raiz(nullptr) {}
     ~Arbol() { liberarNodo(raiz); }
 
-    void insertar(int valor) { raiz = insertarNodo(raiz, valor); }
+    void insertar(int valor) {
+        Nodo* nuevo = new Nodo(valor);
+        if (raiz == nullptr) { raiz = nuevo; return; }
+
+        Cola<Nodo*> cola;
+        cola.enqueue(raiz);
+        while (!cola.isEmpty()) {
+            Nodo* actual = cola.front();
+            cola.dequeue();
+
+            if (actual->izq == nullptr) { actual->izq = nuevo; return; }
+            cola.enqueue(actual->izq);
+
+            if (actual->der == nullptr) { actual->der = nuevo; return; }
+            cola.enqueue(actual->der);
+        }
+    }
+
     void enOrden() { enOrdenNodo(raiz); cout << endl; }
     int cantidad() { return contarNodos(raiz); }
     int altura()   { return alturaNodo(raiz); }
 };
 ```
 
-- Caso base siempre `if (nodo == nullptr) return ...;` — nada de verificar
-  null antes de llamar, se verifica al entrar a la funcion.
-- Insertar compara con `<` para ir a la izquierda y el resto (incluido
-  igual) a la derecha; si el ejercicio pide filtrar que se inserte (por
-  ejemplo, "solo multiplos de 3"), ese filtro va en el metodo publico
-  `insertar`, antes de llamar al privado — el privado no sabe nada del
-  filtro.
-- El recorrido **enOrden** (izquierda, nodo, derecha) imprime de menor a
-  mayor; preorden es nodo-izquierda-derecha y postorden es
-  izquierda-derecha-nodo (usar el que pida el enunciado).
+- Caso base siempre `if (nodo == nullptr) return ...;` en los metodos
+  recursivos — nada de verificar null antes de llamar, se verifica al
+  entrar a la funcion.
+- Como no es BST, ningun recorrido sale ordenado por valor: **preorden**
+  (nodo, izquierda, derecha), **inorden/enOrden** (izquierda, nodo,
+  derecha), **postorden** (izquierda, derecha, nodo) y **por niveles**
+  (con una `Cola<T>`, igual que `insertar`) solo definen el *orden de
+  visita*, no un orden de valores. Usar el que pida el enunciado.
+- Si el ejercicio pide filtrar que se inserte (por ejemplo, "solo
+  multiplos de 3"), ese filtro va en el metodo publico `insertar`, antes
+  de crear el `Nodo` nuevo.
 - `liberarNodo` + destructor liberan todo el arbol recursivamente, mismo
   patron que las listas pero recorriendo ambos hijos primero.
+
+`Ejemplos/Ejercicio02_ArbolMultiplos3` es la excepcion: inserta
+comparando valores (estilo BST) porque su enunciado pedia explicitamente
+mostrar las edades ordenadas con `enOrden`, algo que solo un BST
+garantiza. No copiar ese `insertarNodo` como plantilla general — usar la
+insercion por niveles de arriba salvo que el enunciado necesite de verdad
+un recorrido ordenado.
 
 ## Recursividad (cuando el ejercicio lo pida)
 
