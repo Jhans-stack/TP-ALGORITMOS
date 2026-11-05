@@ -15,7 +15,10 @@ los ejercicios de examen.
 `Ejemplos/Laboratorio01_MergeSortQuickSort/` es material oficial del
 profesor (laboratorio de la Semana 09, con guia paso a paso de Visual
 Studio incluida), asi que para el tema de ordenamiento avanzado (Merge
-Sort / Quick Sort) tiene prioridad sobre cualquier otro ejemplo.
+Sort / Quick Sort) tiene prioridad sobre cualquier otro ejemplo. Lo mismo
+aplica a `Ejemplos/Ejercicio01_BusquedaBinaria/` y
+`Ejemplos/Ejercicio02_ArbolMultiplos3/` (mismo profesor, mismo tipo de
+guia paso a paso) para busqueda binaria y arboles binarios.
 
 ## Estructura del repo
 
@@ -40,6 +43,13 @@ Sort / Quick Sort) tiene prioridad sobre cualquier otro ejemplo.
 - `Ejemplos/Laboratorio01_MergeSortQuickSort/` — ordenar objetos
   (`Paciente`) con Merge Sort y QuickSort sobre `vector<Paciente*>`,
   validando el resultado con `estaOrdenado`.
+- `Ejemplos/Ejercicio01_BusquedaBinaria/` — busqueda binaria iterativa
+  (`busquedaBinariaMejor`) sobre `vector<int>` para encontrar la primera
+  posicion que cumple una condicion (umbral), con una variable `int`
+  global como valor centinela (`noEncontrado`).
+- `Ejemplos/Ejercicio02_ArbolMultiplos3/` — arbol binario de busqueda
+  (`struct Nodo` + `class Arbol`) que solo inserta valores que cumplen una
+  condicion, con recorrido `enOrden`, conteo de nodos y calculo de altura.
 
 Cada ejercicio nuevo va en su propia carpeta dentro de `Ejemplos/` (o en la
 raiz si el profesor pide un solo archivo). Cada carpeta trae su propia
@@ -50,9 +60,13 @@ examen.
 
 ## Estilo general
 
-- C++ estandar de consola (`#include <iostream>`, `<string>`, etc.),
-  compilado como consola simple. **No** habilitar CLR/C++-CLI ni usar
-  `using namespace System;` — eso es de C#/.NET, no de C++ puro.
+- C++ estandar de consola (`#include <iostream>`, `<string>`, etc.). El
+  proyecto de Visual Studio SI se crea como "Aplicacion de consola CLR
+  (.NET Framework)" (`CLRSupport=true` en el `.vcxproj`) porque es la
+  plantilla que piden las guias del profesor — eso es una opcion de
+  compilacion del proyecto, no algo que se escriba en el codigo. El
+  **codigo fuente** nunca usa `using namespace System;` ni tipos/sintaxis
+  de C++/CLI (`String^`, `gcnew`, etc.): sigue siendo C++ puro.
 - `using namespace std;` al inicio del archivo.
 - Nombres de variables y funciones en `camelCase` y en español
   (`monto`, `registrarPedido`, `calcularTotalYPromedio`). Clases en
@@ -99,6 +113,22 @@ examen.
       opcion = -1;
   }
   ```
+
+## Proyecto de Visual Studio
+
+Plantilla: "Aplicacion de consola CLR (.NET Framework)". La mayoria de
+las guias del profesor (`Ejercicio1_GestionPacientes`,
+`Ejercicio01_BusquedaBinaria`, `Ejercicio02_ArbolMultiplos3`) usan el
+scaffold completo que genera Visual Studio por defecto con esa plantilla:
+`pch.h` + `pch.cpp` (encabezado precompilado), `AssemblyInfo.cpp`,
+`Resource.h`, `app.rc`, `app.ico`, y el `.cpp` principal **empieza con
+`#include "pch.h"`** (esa primera linea no se borra; todo lo demas del
+archivo si se reemplaza). Solo `Laboratorio01_MergeSortQuickSort` usa un
+proyecto simplificado sin precompilado (`PrecompiledHeader=NotUsing`, sin
+`pch.h`) — es la excepcion, no la regla. Por defecto, para un ejercicio
+nuevo armar el proyecto completo con `pch.h` como primera linea del
+`.cpp`, salvo que el ejercicio sea claramente de la familia de
+Merge/Quick Sort.
 
 ## Clases de datos (registros)
 
@@ -190,6 +220,10 @@ estructura que las contiene.
   recorrer con `do { ... } while (actual != cabeza)`. Para turnos/rondas.
 - `ListaDoble<T>` (`Nodo<T>` con `anterior` y `siguiente`) — para recorrer
   en ambos sentidos (por ejemplo, un reproductor con siguiente/anterior).
+- `Arbol` (`struct Nodo` con `izq`/`der`) — ver "Arbol binario (BST)" mas
+  abajo. A diferencia de las listas, el `Nodo` de arbol es un `struct`
+  (no `class`), no esta templado (`int valor`, no `T`) y no se recorre
+  con un `while` externo: toda la logica va en metodos recursivos.
 
 El `Lista.h` base que trae el curso usa los nombres `insertarIncial` y
 `mostar` (asi, tal cual, con esa ortografia) ademas de `insertarInicio` /
@@ -198,13 +232,101 @@ Si el ejercicio reutiliza ese `Lista.h` tal cual, respetar esos nombres
 aunque tengan typos; si se escribe una estructura nueva desde cero, usar
 los nombres bien escritos (`insertarInicio`, `mostrar`).
 
+## Arbol binario (BST)
+
+Basado en `Ejemplos/Ejercicio02_ArbolMultiplos3`. El nodo es un `struct`
+simple con campos publicos (no una `class` con getters, como los `Nodo`
+de las listas):
+
+```cpp
+struct Nodo {
+    int valor;
+    Nodo* izq;
+    Nodo* der;
+    Nodo(int v) : valor(v), izq(nullptr), der(nullptr) {}
+};
+```
+
+La clase `Arbol` guarda solo `Nodo* raiz` como atributo `private`, y cada
+operacion tiene dos partes: un metodo **privado** recursivo que recibe un
+`Nodo*` como parametro (no usa `raiz` directamente) y hace el trabajo
+real, y un metodo **publico** sin parametros que llama al privado pasando
+`raiz`:
+
+```cpp
+class Arbol {
+private:
+    Nodo* raiz;
+
+    Nodo* insertarNodo(Nodo* nodo, int valor) {
+        if (nodo == nullptr) return new Nodo(valor);
+        if (valor < nodo->valor) nodo->izq = insertarNodo(nodo->izq, valor);
+        else                     nodo->der = insertarNodo(nodo->der, valor);
+        return nodo;
+    }
+
+    void enOrdenNodo(Nodo* nodo) {
+        if (nodo == nullptr) return;
+        enOrdenNodo(nodo->izq);
+        cout << nodo->valor << " ";
+        enOrdenNodo(nodo->der);
+    }
+
+    int contarNodos(Nodo* nodo) {
+        if (nodo == nullptr) return 0;
+        return 1 + contarNodos(nodo->izq) + contarNodos(nodo->der);
+    }
+
+    int alturaNodo(Nodo* nodo) {
+        if (nodo == nullptr) return 0;
+        int alturaIzq = alturaNodo(nodo->izq);
+        int alturaDer = alturaNodo(nodo->der);
+        return 1 + (alturaIzq > alturaDer ? alturaIzq : alturaDer);
+    }
+
+    void liberarNodo(Nodo* nodo) {
+        if (nodo == nullptr) return;
+        liberarNodo(nodo->izq);
+        liberarNodo(nodo->der);
+        delete nodo;
+    }
+
+public:
+    Arbol() : raiz(nullptr) {}
+    ~Arbol() { liberarNodo(raiz); }
+
+    void insertar(int valor) { raiz = insertarNodo(raiz, valor); }
+    void enOrden() { enOrdenNodo(raiz); cout << endl; }
+    int cantidad() { return contarNodos(raiz); }
+    int altura()   { return alturaNodo(raiz); }
+};
+```
+
+- Caso base siempre `if (nodo == nullptr) return ...;` — nada de verificar
+  null antes de llamar, se verifica al entrar a la funcion.
+- Insertar compara con `<` para ir a la izquierda y el resto (incluido
+  igual) a la derecha; si el ejercicio pide filtrar que se inserte (por
+  ejemplo, "solo multiplos de 3"), ese filtro va en el metodo publico
+  `insertar`, antes de llamar al privado — el privado no sabe nada del
+  filtro.
+- El recorrido **enOrden** (izquierda, nodo, derecha) imprime de menor a
+  mayor; preorden es nodo-izquierda-derecha y postorden es
+  izquierda-derecha-nodo (usar el que pida el enunciado).
+- `liberarNodo` + destructor liberan todo el arbol recursivamente, mismo
+  patron que las listas pero recorriendo ambos hijos primero.
+
 ## Recursividad (cuando el ejercicio lo pida)
 
 - Caso base explicito al inicio de la funcion.
 - Sin `while`/`for` dentro de una funcion recursiva: cada llamada
   recursiva reemplaza a una iteracion.
-- Sin variables globales. Si hace falta acumular un resultado entre
-  llamadas, pasarlo por referencia (`int& suma`) o devolverlo como `return`.
+- Sin variables globales **dentro de la funcion recursiva en si**: si hace
+  falta acumular un resultado entre llamadas, pasarlo por referencia
+  (`int& suma`) o devolverlo como `return`. Una variable global simple
+  fuera de cualquier funcion (por ejemplo un centinela `int noEncontrado
+  = -1;` que no cambia nunca, como en `Ejercicio01_BusquedaBinaria`) si es
+  valida: no es un acumulador ni genera efectos secundarios entre
+  llamadas, es solo un valor constante con nombre.
 - La recursion puede ser sobre un indice de arreglo (`separarArreglo`), un
   puntero a nodo (`sumaEdadesEquipo`, `contarGenero`), o ambos. Un
   parametro por defecto (`bool primera = true`) es valido para llevar
@@ -238,6 +360,46 @@ void seleccion(ListaEnlazada<T>& A, Criterio criterio) {
   lambda comparadora en el `main()`. No es "C++ moderno raro": es el mismo
   concepto de generalizacion con templates visto en clase, aplicado a una
   funcion en vez de a una clase.
+
+## Busqueda binaria
+
+Basado en `Ejemplos/Ejercicio01_BusquedaBinaria`. Es **iterativa**
+(`while`), no recursiva — a diferencia del resto del curso, aqui si se
+usa un bucle porque no se pidio recursividad. Patron con `inicio`/`fin`/
+`medio` y un acumulador `resultado` para quedarse con la ultima posicion
+valida encontrada (util cuando se busca "la primera que cumple una
+condicion", no un valor exacto):
+
+```cpp
+int noEncontrado = -1;
+
+int busquedaBinariaMejor(vector<int>& datos, int umbral) {
+    int inicio = 0;
+    int fin = (int)datos.size() - 1;
+    int resultado = noEncontrado;
+
+    while (inicio <= fin) {
+        int medio = (inicio + fin) / 2;
+
+        if (datos[medio] >= umbral) {
+            resultado = medio;
+            fin = medio - 1;
+        } else {
+            inicio = medio + 1;
+        }
+    }
+    return resultado;
+}
+```
+
+- El vector debe estar ordenado (lo pide el enunciado, no se valida en
+  codigo).
+- `resultado` se actualiza cada vez que `medio` cumple la condicion, pero
+  la busqueda sigue achicando el rango hacia el lado donde podria haber
+  una respuesta *mejor* (aqui, mas a la izquierda) en vez de cortar de
+  una — por eso no hace `return medio;` apenas encuentra una coincidencia.
+- Comparar contra el centinela (`if (posicion == noEncontrado)`) en vez de
+  contra `-1` directo en el `main`, para que el significado quede claro.
 
 ## Ordenamiento
 
@@ -299,7 +461,9 @@ contenedores de la STL", y solo para este par de algoritmos.
   `structured bindings`, u otro C++ moderno que no aparezca ya en los
   ejemplos. (Los templates propios con un parametro de tipo, incluyendo uno
   para una lambda como `Criterio`, si estan permitidos: ver mas arriba.)
-- `using namespace System;` / CLR support.
+- `using namespace System;` ni ningun tipo/sintaxis de C++/CLI en el
+  codigo (`String^`, `gcnew`, etc.) — aunque el proyecto en si tenga
+  `CLRSupport=true`, ver "Estilo general".
 
 Cuando se pida un ejercicio nuevo: elegir la estructura de `Ejemplos/` que
 mejor calce con el enunciado (lista simple, cola, pila, circular o doble),
